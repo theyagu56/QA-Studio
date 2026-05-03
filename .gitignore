@@ -1,21 +1,30 @@
 # ── macOS ──────────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 
 # ── Node.js ────────────────────────────────────────────
 node_modules/
 npm-debug.log*
-package-lock.json
-
-# ── Playwright generated output ────────────────────────
-test-results/
-playwright-report/
-dist/
 
 # ── Temp / Old session artifacts ──────────────────────
 mnt/
+mnt 2/
+mnt 3/
+zi*/
+
+# ── Zip files ──────────────────────────────────────────
 *.zip
 
 # ── Environment ────────────────────────────────────────
 .env
 .env.local
-*.local
+.env.*.local
+
+# ── Editor ─────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo

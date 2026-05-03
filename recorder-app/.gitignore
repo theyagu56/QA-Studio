@@ -6,16 +6,16 @@ node_modules/
 npm-debug.log*
 package-lock.json
 
-# ── Playwright generated output ────────────────────────
-test-results/
-playwright-report/
-dist/
+# ── App data (user recordings — keep or exclude based on preference) ──
+# Uncomment below to exclude saved test data from git:
+# test-data.json
 
-# ── Temp / Old session artifacts ──────────────────────
-mnt/
-*.zip
+# ── Legacy ─────────────────────────────────────────────
+tags.json
+
+# ── Screenshots (auto-generated during test runs) ──────
+screenshots/
 
 # ── Environment ────────────────────────────────────────
 .env
 .env.local
-*.local
