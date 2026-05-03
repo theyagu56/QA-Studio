@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Test Recorder</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;
+  --border:#30363d;--border2:#3d444d;
+  --text:#e6edf3;--text2:#8d96a0;--text3:#656d76;
+  --accent:#388bfd;--accent2:#1f6feb;
+  --green:#3fb950;--green-bg:#0d2318;
+  --red:#f85149;--red-bg:#2d1118;
+  --orange:#d29922;--orange-bg:#2d1f0e;
+  --purple:#bc8cff;--purple-bg:#1d1133;
+  --teal:#39d353;
+  --sidebar-w:270px;--toolbox-w:240px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:13px}
+button{cursor:pointer;font-family:inherit;font-size:13px}
+input,select,textarea{font-family:inherit;font-size:13px}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* App bar */
+.app-bar{display:flex;align-items:center;gap:10px;padding:0 14px;height:46px;min-height:46px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.app-bar h1{font-size:14px;font-weight:700}
+.app-bar .ver{font-size:10px;color:var(--text3);background:var(--bg4);padding:1px 5px;border-radius:8px;margin-left:3px}
+.app-bar .spacer{flex:1}
+.status-pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;border:1px solid transparent}
+.status-pill.idle{background:var(--bg4);color:var(--text3);border-color:var(--border)}
+.status-pill.recording{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.status-pill.paused{background:var(--orange-bg);color:var(--orange);border-color:var(--orange)}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-pill.recording .sdot{animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* Recording bar */
+.rec-bar{display:none;align-items:center;gap:8px;padding:0 14px;height:42px;min-height:42px;background:var(--red-bg);border-bottom:1px solid var(--red);flex-shrink:0}
+.rec-bar.visible{display:flex}
+.rec-info{display:flex;align-items:center;gap:8px;flex:1}
+.rec-lbl{font-size:11px;color:var(--red);font-weight:700}
+.rec-nm{font-size:13px;color:var(--text);font-weight:600}
+.rec-ct{font-size:11px;color:var(--text2);background:var(--bg4);padding:2px 7px;border-radius:8px}
+.rbtn{padding:5px 12px;border-radius:5px;font-weight:600;font-size:12px;border:1px solid transparent}
+.rbtn.pause{background:var(--orange-bg);color:var(--orange);border-color:var(--orange)}
+.rbtn.resume{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.rbtn.stop{background:var(--bg4);color:var(--red);border-color:var(--red)}
+.rbtn:hover{filter:brightness(1.2)}
+
+/* Main layout */
+.main-layout{display:flex;flex:1;overflow:hidden}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-top{padding:10px 8px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.sidebar-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)}
+.btn-ns{display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:600}
+.btn-ns:hover{background:var(--bg4);color:var(--text)}
+.sidebar-search{width:100%;padding:6px 9px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);outline:none;font-size:12px}
+.sidebar-search:focus{border-color:var(--accent)}
+.suite-tree{flex:1;overflow-y:auto;padding:3px 0}
+.suite-header{display:flex;align-items:center;gap:5px;padding:5px 8px;cursor:pointer;user-select:none;transition:background 0.1s}
+.suite-header:hover{background:var(--bg3)}
+.chev{font-size:8px;color:var(--text3);transition:transform 0.2s;width:9px;flex-shrink:0}
+.chev.open{transform:rotate(90deg)}
+.suite-name{flex:1;font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.suite-ct{font-size:10px;color:var(--text3);background:var(--bg4);padding:1px 5px;border-radius:7px;flex-shrink:0}
+.suite-acts{display:none;gap:2px}
+.suite-header:hover .suite-acts{display:flex}
+.sa-btn{padding:2px 4px;border:none;background:transparent;color:var(--text3);border-radius:3px;font-size:11px}
+.sa-btn:hover{background:var(--bg4);color:var(--text2)}
+.tc-list{display:none}
+.tc-list.open{display:block}
+.tc-item{display:flex;align-items:center;gap:7px;padding:4px 8px 4px 22px;cursor:pointer;border-left:2px solid transparent;transition:background 0.1s}
+.tc-item:hover{background:var(--bg3)}
+.tc-item.active{background:var(--bg4);border-left-color:var(--accent)}
+.tc-check{width:12px;height:12px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+.tc-nm{flex:1;font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-item.active .tc-nm{color:var(--text)}
+.tc-sc{font-size:10px;color:var(--text3);flex-shrink:0}
+.tc-rbtn{display:none;padding:1px 5px;border:none;border-radius:3px;background:var(--accent2);color:#fff;font-size:10px;font-weight:600;flex-shrink:0}
+.tc-item:hover .tc-rbtn{display:block}
+.tc-item:hover .tc-sc{display:none}
+.sidebar-bottom{border-top:1px solid var(--border);padding:8px;flex-shrink:0;display:flex;flex-direction:column;gap:5px}
+.sel-info{font-size:11px;color:var(--text3);text-align:center}
+.sel-info span{color:var(--accent);font-weight:700}
+.btn-run-sel{width:100%;padding:7px;border-radius:5px;background:var(--accent2);color:#fff;border:none;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn-run-sel:hover:not(:disabled){background:var(--accent)}
+.btn-run-sel:disabled{opacity:0.35;cursor:not-allowed}
+.btn-newrec{width:100%;padding:7px;border-radius:5px;background:transparent;color:var(--green);border:1px solid var(--green);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn-newrec:hover{background:var(--green-bg)}
+
+/* ── MAIN PANEL ── */
+.main-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);gap:10px;padding:40px}
+.empty-state .eicon{font-size:44px}
+.empty-state h2{font-size:15px;color:var(--text2);font-weight:600}
+.empty-state p{font-size:13px;text-align:center;line-height:1.7;max-width:320px}
+.tc-detail{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.tc-dh{padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.breadcrumb{font-size:11px;color:var(--text3);margin-bottom:5px}
+.breadcrumb span{color:var(--text2)}
+.tc-dh h2{font-size:16px;font-weight:700;margin-bottom:7px}
+.tc-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.mchip{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--text2);background:var(--bg4);padding:2px 7px;border-radius:8px;border:1px solid var(--border)}
+.tc-acts{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.abtn{padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:var(--bg4);color:var(--text2);font-weight:600;font-size:12px;transition:all 0.15s;display:flex;align-items:center;gap:4px}
+.abtn:hover{background:var(--bg3);color:var(--text)}
+.abtn.primary{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+.abtn.primary:hover{background:var(--accent)}
+.abtn.danger{color:var(--red)}
+.abtn.danger:hover{background:var(--red-bg);border-color:var(--red)}
+.abtn.save{background:var(--green-bg);color:var(--green);border-color:var(--green);display:none}
+.abtn.save.visible{display:flex}
+
+/* Steps area */
+.steps-area{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column}
+.steps-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.steps-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)}
+.steps-hint{font-size:11px;color:var(--text3)}
+.steps-list{display:flex;flex-direction:column;gap:3px;min-height:40px}
+
+/* Step rows */
+.step-row{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;transition:all 0.1s;position:relative;cursor:default}
+.step-row:hover{background:var(--bg3);border-color:var(--border2)}
+.step-row.dragging{opacity:0.4;border-style:dashed}
+.step-row.drag-over{border-color:var(--accent);background:rgba(56,139,253,0.08)}
+.drag-handle{color:var(--text3);cursor:grab;font-size:13px;padding-top:1px;flex-shrink:0;user-select:none}
+.drag-handle:active{cursor:grabbing}
+.step-num{font-size:10px;color:var(--text3);min-width:20px;text-align:right;padding-top:2px;font-weight:600;flex-shrink:0}
+.step-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;min-width:82px;text-align:center;flex-shrink:0;letter-spacing:0.3px;text-transform:uppercase}
+.step-badge.goto{background:#0c2d4a;color:#58a6ff}
+.step-badge.click{background:var(--purple-bg);color:var(--purple)}
+.step-badge.fill{background:var(--green-bg);color:var(--green)}
+.step-badge.selectoption,.step-badge.selectOption{background:#2d1f0e;color:#e3b341}
+.step-badge.check{background:#0c2d4a;color:#79c0ff}
+.step-badge.uncheck{background:var(--red-bg);color:var(--red)}
+/* Toolbox step badges */
+.step-badge.wait,.step-badge.waitforelement{background:#1a1a2e;color:#a78bfa}
+.step-badge.asserttext,.step-badge.assertvisible,.step-badge.asserturl,.step-badge.asserttitle,.step-badge.assertnotvisible{background:#0f2a1a;color:#4ade80}
+.step-badge.hover,.step-badge.scroll,.step-badge.scrollpage,.step-badge.presskey,.step-badge.clearfield,.step-badge.screenshot{background:#1a1a2e;color:#94a3b8}
+.step-badge.ifexists,.step-badge.ifnotexists{background:#2a1a0f;color:#fb923c}
+.step-content{flex:1;min-width:0}
+.step-desc{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-sel{font-size:11px;color:var(--text3);font-family:'SF Mono','Fira Code',monospace;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-val{font-size:11px;color:var(--accent);font-family:'SF Mono','Fira Code',monospace}
+.step-row-acts{display:none;gap:2px;margin-left:4px;flex-shrink:0}
+.step-row:hover .step-row-acts{display:flex}
+.step-act-btn{padding:2px 6px;border:none;border-radius:3px;background:var(--bg4);color:var(--text3);font-size:11px}
+.step-act-btn:hover{background:var(--border2);color:var(--text2)}
+.step-act-btn.del{color:var(--red)}
+.step-act-btn.del:hover{background:var(--red-bg)}
+
+/* Drop zone */
+.drop-zone{height:4px;border-radius:4px;margin:1px 0;transition:all 0.15s;background:transparent}
+.drop-zone.drag-active{height:24px;background:rgba(56,139,253,0.15);border:1px dashed var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent)}
+
+/* Live panel */
+.live-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.live-hdr{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.live-hdr h2{font-size:13px;font-weight:700;color:var(--red);display:flex;align-items:center;gap:7px}
+.live-ct{font-size:22px;font-weight:800;color:var(--red)}
+.live-steps{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:3px}
+.live-step{animation:slideIn 0.2s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ── TOOLBOX ── */
+.toolbox{width:var(--toolbox-w);min-width:var(--toolbox-w);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width 0.2s}
+.toolbox.collapsed{width:0;min-width:0;border-left:none;overflow:hidden}
+.toolbox-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 10px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.toolbox-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)}
+.toolbox-body{flex:1;overflow-y:auto;padding:8px}
+.tool-cat{margin-bottom:10px}
+.tool-cat-name{font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);padding:0 4px;margin-bottom:5px}
+.tool-items{display:flex;flex-direction:column;gap:3px}
+.tool-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:grab;transition:all 0.15s;user-select:none}
+.tool-item:hover{background:var(--bg4);border-color:var(--border2);transform:translateX(2px)}
+.tool-item:active{cursor:grabbing;opacity:0.7}
+.tool-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.tool-info{flex:1;min-width:0}
+.tool-name{font-size:12px;font-weight:600;color:var(--text2)}
+.tool-desc{font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toolbox-btn{padding:4px 8px;border:none;background:var(--bg4);color:var(--text2);border-radius:4px;font-size:11px;font-weight:600}
+.toolbox-btn:hover{background:var(--border);color:var(--text)}
+
+/* Toolbox toggle in app bar */
+.tb-toggle{padding:4px 10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text2);font-size:12px;font-weight:600}
+.tb-toggle:hover{background:var(--bg4);color:var(--text)}
+.tb-toggle.active{background:var(--bg4);color:var(--accent);border-color:var(--accent)}
+
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;width:90%;max-width:500px;overflow:hidden}
+.modal-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h3{font-size:14px;font-weight:700}
+.modal-x{background:none;border:none;color:var(--text3);font-size:17px}
+.modal-x:hover{color:var(--text)}
+.modal-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow-y:auto}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--text2);font-weight:600}
+.field input,.field select,.field textarea{padding:7px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);outline:none}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field .hint{font-size:10px;color:var(--text3)}
+.modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px}
+.btn-cancel{padding:6px 14px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text2);font-weight:600}
+.btn-cancel:hover{background:var(--bg4)}
+.btn-ok{padding:6px 14px;border-radius:5px;border:none;background:var(--accent2);color:#fff;font-weight:700}
+.btn-ok:hover{background:var(--accent)}
+
+/* ctx menu */
+.ctx-menu{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:7px;padding:4px;min-width:170px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.ctx-i{padding:6px 12px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2)}
+.ctx-i:hover{background:var(--bg4);color:var(--text)}
+.ctx-i.danger{color:var(--red)}
+.ctx-i.danger:hover{background:var(--red-bg)}
+.ctx-sep{border-top:1px solid var(--border);margin:3px 0}
+
+/* toast */
+#toast{position:fixed;bottom:18px;right:18px;max-width:320px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:10px 14px;font-size:12px;color:var(--text);z-index:300;transform:translateY(50px);opacity:0;transition:all 0.25s;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.success{border-color:var(--green);color:var(--green)}
+#toast.error{border-color:var(--red);color:var(--red)}
+#toast.info{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- App Bar -->
+<div class="app-bar">
+  <a href="/" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;background:var(--bg4);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:600;text-decoration:none;transition:border-color .15s,color .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">← Home</a>
+  <span style="font-size:17px">🎬</span>
+  <h1>Test Recorder <span class="ver">v2.1</span></h1>
+  <div class="spacer"></div>
+  <button class="tb-toggle active" id="tbToggle" onclick="toggleToolbox()" title="Toggle Step Toolbox">🧰 Toolbox</button>
+  <div class="status-pill idle" id="statusPill" style="margin-left:8px">
+    <div class="sdot"></div><span id="statusText">Idle</span>
+  </div>
+</div>
+
+<!-- Recording Bar -->
+<div class="rec-bar" id="recBar">
+  <div class="rec-info">
+    <span class="rec-lbl">⏺ REC</span>
+    <span class="rec-nm" id="recName">—</span>
+    <span class="rec-ct" id="recStepCt">0 steps</span>
+  </div>
+  <button class="rbtn pause"  id="btnPause"  onclick="pauseRec()">⏸ Pause</button>
+  <button class="rbtn resume" id="btnResume" onclick="resumeRec()" style="display:none">▶ Resume</button>
+  <button class="rbtn stop"   onclick="stopRec()">⏹ Stop &amp; Save</button>
+</div>
+
+<div class="main-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-top-row">
+        <span class="sidebar-title">Test Suites</span>
+        <button class="btn-ns" onclick="openSuiteModal()">＋ Suite</button>
+      </div>
+      <input class="sidebar-search" type="text" id="searchInput" placeholder="Search test cases…" oninput="filterTree()"/>
+    </div>
+    <div class="suite-tree" id="suiteTree"></div>
+    <div class="sidebar-bottom">
+      <div class="sel-info" id="selInfo" style="display:none"><span id="selCt">0</span> selected</div>
+      <button class="btn-run-sel" id="btnRunSel" onclick="runSelected()" disabled>▶ Run Selected</button>
+      <button class="btn-newrec" onclick="openRecordModal()">⏺ New Recording</button>
+    </div>
+  </div>
+
+  <!-- MAIN PANEL -->
+  <div class="main-panel" id="mainPanel">
+
+    <!-- Empty -->
+    <div class="empty-state" id="emptyState">
+      <div class="eicon">🧪</div>
+      <h2>Select a Test Case</h2>
+      <p>Click a test case in the sidebar to view and edit its steps.<br/>Drag steps from the <strong>Toolbox</strong> on the right to add new actions.</p>
+    </div>
+
+    <!-- Test Case Detail -->
+    <div class="tc-detail" id="tcDetail" style="display:none">
+      <div class="tc-dh">
+        <div class="breadcrumb" id="detailBC"></div>
+        <h2 id="detailTitle"></h2>
+        <div class="tc-meta" id="detailMeta"></div>
+        <div class="tc-acts">
+          <button class="abtn primary" onclick="runCurrentTC()">▶ Run</button>
+          <button class="abtn" onclick="openMoveModal()">⇄ Move to Suite</button>
+          <button class="abtn" onclick="openRenameModal()">✏ Rename</button>
+          <button class="abtn save" id="btnSaveSteps" onclick="saveSteps()">💾 Save Steps</button>
+          <button class="abtn danger" onclick="deleteCurrentTC()">🗑 Delete</button>
+        </div>
+      </div>
+      <div class="steps-area">
+        <div class="steps-header">
+          <span class="steps-title">Test Steps</span>
+          <span class="steps-hint" id="stepsHint">Drag steps to reorder · Drag from Toolbox to add</span>
+        </div>
+        <div class="steps-list" id="stepsList"
+          ondragover="onListDragOver(event)"
+          ondrop="onListDrop(event)"
+          ondragleave="onListDragLeave(event)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Recording -->
+    <div class="live-panel" id="livePanel" style="display:none">
+      <div class="live-hdr">
+        <h2><span class="sdot" style="background:var(--red);display:inline-block;border-radius:50%;width:7px;height:7px;animation:blink 1.2s infinite"></span> Live Recording</h2>
+        <div><span style="font-size:11px;color:var(--text3)">Steps: </span><span class="live-ct" id="liveCt">0</span></div>
+      </div>
+      <div class="live-steps" id="liveSteps">
+        <div style="text-align:center;color:var(--text3);padding:40px;font-size:13px;line-height:1.8">
+          🖱️ Interact with the browser window that opened.<br/>Every action will appear here in real time.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBOX -->
+  <div class="toolbox" id="toolbox">
+    <div class="toolbox-hdr">
+      <span class="toolbox-title">🧰 Step Toolbox</span>
+      <button class="toolbox-btn" onclick="toggleToolbox()">✕</button>
+    </div>
+    <div class="toolbox-body" id="toolboxBody"></div>
+  </div>
+
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="recordModal">
+  <div class="modal">
+    <div class="modal-hdr"><h3>⏺ New Recording</h3><button class="modal-x" onclick="closeModal('recordModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Test Case Name *</label><input id="recTCName" type="text" placeholder="e.g. Login with valid credentials"/></div>
+      <div class="field"><label>Test Suite *</label><select id="recSuiteId"></select></div>
+      <div class="field"><label>Start URL</label><input id="recUrl" type="text" placeholder="https://your-site.com"/></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('recordModal')">Cancel</button>
+      <button class="btn-ok" onclick="startRecording()">⏺ Start Recording</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="suiteModal">
+  <div class="modal">
+    <div class="modal-hdr"><h3>🗂 New Test Suite</h3><button class="modal-x" onclick="closeModal('suiteModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Suite Name *</label><input id="suiteName" type="text" placeholder="e.g. Login Flows"/></div>
+      <div class="field"><label>Description</label><input id="suiteDesc" type="text" placeholder="Optional"/></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('suiteModal')">Cancel</button>
+      <button class="btn-ok" onclick="createSuite()">Create Suite</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="moveModal">
+  <div class="modal">
+    <div class="modal-hdr"><h3>⇄ Move Test Case</h3><button class="modal-x" onclick="closeModal('moveModal')">✕</button></div>
+    <div class="modal-body"><div class="field"><label>Move to Suite</label><select id="moveSuiteId"></select></div></div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('moveModal')">Cancel</button>
+      <button class="btn-ok" onclick="moveTC()">Move</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="renameModal">
+  <div class="modal">
+    <div class="modal-hdr"><h3>✏ Rename Test Case</h3><button class="modal-x" onclick="closeModal('renameModal')">✕</button></div>
+    <div class="modal-body"><div class="field"><label>New Name *</label><input id="renameInput" type="text"/></div></div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('renameModal')">Cancel</button>
+      <button class="btn-ok" onclick="renameTC()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- Step Editor Modal -->
+<div class="modal-overlay" id="stepEditorModal">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="stepEditorTitle">Edit Step</h3><button class="modal-x" onclick="closeModal('stepEditorModal')">✕</button></div>
+    <div class="modal-body" id="stepEditorBody"></div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('stepEditorModal')">Cancel</button>
+      <button class="btn-ok" onclick="saveStepEdit()">Save Step</button>
+    </div>
+  </div>
+</div>
+
+<div class="ctx-menu" id="ctxMenu" style="display:none"></div>
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let suites         = [];
+let activeTCId     = null;
+let currentSteps   = [];       // mutable copy of steps being edited
+let stepsModified  = false;
+let selectedTCIds  = new Set();
+let expandedSuites = new Set();
+let pollTimer      = null;
+let recTCName      = '';
+let recSuiteId     = '';
+
+// Drag state
+let dragSrcType    = '';       // 'step' | 'toolbox'
+let dragSrcIdx     = -1;
+let dragToolDef    = null;
+let editingStepIdx = -1;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOOLBOX DEFINITIONS
+// ─────────────────────────────────────────────────────────────────────────────
+const TOOLBOX_CATS = [
+  {
+    cat: 'Timing', items: [
+      { type:'wait',           icon:'⏱', name:'Wait',              desc:'Pause for N seconds',           fields:[{k:'seconds',lbl:'Seconds',type:'number',def:'3'}] },
+      { type:'waitForElement', icon:'👁', name:'Wait for Element',  desc:'Wait until element appears',    fields:[{k:'selector',lbl:'CSS Selector / XPath',type:'text',def:''},{k:'timeout',lbl:'Timeout (seconds)',type:'number',def:'10'}] },
+    ]
+  },
+  {
+    cat: 'Assertions', items: [
+      { type:'assertText',       icon:'✅', name:'Assert Text',         desc:'Verify element contains text',  fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'text',lbl:'Expected Text',type:'text',def:''}] },
+      { type:'assertVisible',    icon:'👀', name:'Assert Visible',      desc:'Verify element is visible',     fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'assertNotVisible', icon:'🙈', name:'Assert Not Visible',  desc:'Verify element is hidden',      fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'assertURL',        icon:'🔗', name:'Assert URL Contains', desc:'Verify page URL contains text', fields:[{k:'url',lbl:'Expected URL fragment',type:'text',def:''}] },
+      { type:'assertTitle',      icon:'📄', name:'Assert Title',        desc:'Verify page title contains',    fields:[{k:'text',lbl:'Expected Title Text',type:'text',def:''}] },
+    ]
+  },
+  {
+    cat: 'Actions', items: [
+      { type:'scroll',     icon:'↕',  name:'Scroll to Element', desc:'Scroll element into view',     fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'hover',      icon:'🖱', name:'Hover',              desc:'Hover over element',            fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'pressKey',   icon:'⌨',  name:'Press Key',          desc:'Press a keyboard key',          fields:[{k:'key',lbl:'Key',type:'select',def:'Enter',opts:['Enter','Tab','Escape','Space','ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Backspace','Delete','F5','PageDown','PageUp']}] },
+      { type:'clearField', icon:'🗑', name:'Clear Field',        desc:'Clear an input field',          fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'scrollPage', icon:'📜', name:'Scroll Page',        desc:'Scroll the page up or down',    fields:[{k:'direction',lbl:'Direction',type:'select',def:'down',opts:['down','up']}] },
+      { type:'screenshot', icon:'📷', name:'Screenshot',         desc:'Capture a screenshot',          fields:[{k:'name',lbl:'File Name (no extension)',type:'text',def:'screenshot'}] },
+    ]
+  },
+  {
+    cat: 'Conditional', items: [
+      { type:'ifExists',    icon:'❓', name:'If Exists → Action', desc:'Run action only if element found', fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'action',lbl:'Action',type:'select',def:'click',opts:['click','check','fill']},{k:'value',lbl:'Value (for fill)',type:'text',def:''}] },
+      { type:'ifNotExists', icon:'🚫', name:'Assert Not Exists',  desc:'Fail if element found',           fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+    ]
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API
+// ─────────────────────────────────────────────────────────────────────────────
+async function api(method, url, body) {
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: body!=null ? JSON.stringify(body) : undefined });
+  return r.json();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `show ${type}`;
+  clearTimeout(el._t); el._t = setTimeout(()=>el.className='', 3500);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOOLBOX
+// ─────────────────────────────────────────────────────────────────────────────
+function renderToolbox() {
+  const body = document.getElementById('toolboxBody');
+  body.innerHTML = TOOLBOX_CATS.map(cat => `
+    <div class="tool-cat">
+      <div class="tool-cat-name">${cat.cat}</div>
+      <div class="tool-items">
+        ${cat.items.map(item => `
+          <div class="tool-item"
+            draggable="true"
+            data-tool='${JSON.stringify(item).replace(/'/g,"&#39;")}'
+            ondragstart="onToolDragStart(event, this)"
+            ondblclick="addToolboxStepAtEnd(this)">
+            <span class="tool-icon">${item.icon}</span>
+            <div class="tool-info">
+              <div class="tool-name">${item.name}</div>
+              <div class="tool-desc">${item.desc}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleToolbox() {
+  const tb  = document.getElementById('toolbox');
+  const btn = document.getElementById('tbToggle');
+  tb.classList.toggle('collapsed');
+  btn.classList.toggle('active', !tb.classList.contains('collapsed'));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIDEBAR
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadSuites() {
+  suites = await api('GET', '/api/suites');
+  renderTree();
+}
+
+function renderTree(filter='') {
+  const q = filter.toLowerCase();
+  document.getElementById('suiteTree').innerHTML = suites.map(s => {
+    const tcs = filter ? s.testCases.filter(t=>t.name.toLowerCase().includes(q)) : s.testCases;
+    if (filter && !tcs.length) return '';
+    const open = expandedSuites.has(s.id) || !!filter;
+    return `<div class="suite-item">
+      <div class="suite-header" onclick="toggleSuite('${es(s.id)}')">
+        <span class="chev ${open?'open':''}">▶</span>
+        <span style="font-size:13px">🗂</span>
+        <span class="suite-name">${es(s.name)}</span>
+        <span class="suite-ct">${tcs.length}</span>
+        <div class="suite-acts">
+          <button class="sa-btn" onclick="event.stopPropagation();runSuite('${es(s.id)}')" title="Run all">▶</button>
+          <button class="sa-btn" onclick="event.stopPropagation();showSuiteMenu(event,'${es(s.id)}')" title="More">⋯</button>
+        </div>
+      </div>
+      <div class="tc-list ${open?'open':''}" id="tcl_${cid(s.id)}">
+        ${tcs.length ? tcs.map(t=>`
+          <div class="tc-item ${activeTCId===t.id?'active':''}" onclick="openTC('${es(t.id)}')">
+            <input type="checkbox" class="tc-check" ${selectedTCIds.has(t.id)?'checked':''} onclick="event.stopPropagation();toggleSel('${es(t.id)}')"/>
+            <span class="tc-nm">${es(t.name)}</span>
+            <span class="tc-sc">${t.stepCount}s</span>
+            <button class="tc-rbtn" onclick="event.stopPropagation();runTC('${es(t.id)}')">▶</button>
+          </div>`).join('')
+        : `<div style="padding:4px 22px;font-size:11px;color:var(--text3);font-style:italic">No test cases</div>`}
+      </div>
+    </div>`;
+  }).join('');
+  updateSelUI();
+}
+
+function toggleSuite(id) { expandedSuites.has(id)?expandedSuites.delete(id):expandedSuites.add(id); renderTree(document.getElementById('searchInput').value); }
+function filterTree()    { renderTree(document.getElementById('searchInput').value); }
+function es(s)  { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function cid(s) { return s.replace(/[^a-zA-Z0-9]/g,'_'); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OPEN TEST CASE
+// ─────────────────────────────────────────────────────────────────────────────
+async function openTC(id) {
+  if (stepsModified) { if (!confirm('You have unsaved step changes. Discard?')) return; }
+  activeTCId    = id;
+  stepsModified = false;
+  renderTree(document.getElementById('searchInput').value);
+
+  const tc = await api('GET', `/api/testcases/${encodeURIComponent(id)}`);
+  if (tc.error) { toast(tc.error,'error'); return; }
+
+  currentSteps = JSON.parse(JSON.stringify(tc.steps)); // deep copy
+
+  const suite = suites.find(s=>s.id===tc.suiteId);
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('livePanel').style.display  = 'none';
+  document.getElementById('tcDetail').style.display   = 'flex';
+  document.getElementById('detailBC').innerHTML        = `Test Suite: <span>${es(suite?.name||tc.suiteId)}</span> / Test Case`;
+  document.getElementById('detailTitle').textContent   = tc.name;
+  document.getElementById('detailMeta').innerHTML      = `
+    <span class="mchip">🪜 ${tc.stepCount} steps</span>
+    <span class="mchip">📅 ${new Date(tc.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+    <span class="mchip">🗂 ${es(suite?.name||tc.suiteId)}</span>`;
+
+  renderSteps();
+  markSaved();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER STEPS
+// ─────────────────────────────────────────────────────────────────────────────
+function renderSteps() {
+  const list = document.getElementById('stepsList');
+  if (!currentSteps.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--text3);padding:30px;font-size:12px;border:1px dashed var(--border);border-radius:6px">Drag steps from the Toolbox to add actions here</div>`;
+    return;
+  }
+  list.innerHTML = currentSteps.map((s,i) => stepRowHTML(s,i)).join('');
+}
+
+function stepRowHTML(step, idx) {
+  const type      = step.type || '';
+  const badgeCls  = type.toLowerCase();
+  const typeLabel = {
+    goto:'GOTO', click:'CLICK', fill:'FILL', selectOption:'DROPDOWN',
+    check:'CHECK', uncheck:'UNCHECK',
+    wait:'WAIT', waitForElement:'WAIT FOR',
+    assertText:'ASSERT TXT', assertVisible:'ASSERT VIS', assertNotVisible:'ASSERT !VIS',
+    assertURL:'ASSERT URL', assertTitle:'ASSERT TTL',
+    scroll:'SCROLL', hover:'HOVER', pressKey:'PRESS KEY',
+    clearField:'CLEAR', screenshot:'SCREENSHOT', scrollPage:'SCROLL PAGE',
+    ifExists:'IF EXISTS', ifNotExists:'IF !EXISTS',
+  }[type] || type.toUpperCase();
+
+  let desc='', sel='', val='';
+  if (type==='goto')      { desc=step.url; }
+  else if (type==='fill') { desc=step.label||step.selector; val=`"${step.value}"`; sel=step.selector; }
+  else if (type==='wait') { desc=`${step.seconds||3} seconds`; }
+  else if (type==='pressKey') { desc=`Key: ${step.key}`; }
+  else if (type==='screenshot') { desc=step.name||'screenshot'; }
+  else if (type==='scrollPage') { desc=`Direction: ${step.direction||'down'}`; }
+  else if (type==='assertText') { desc=`"${step.text}" in ${step.selector}`; }
+  else if (type==='assertURL')  { desc=`URL contains "${step.url}"`; }
+  else if (type==='assertTitle'){ desc=`Title contains "${step.text}"`; }
+  else if (type==='ifExists')   { desc=`If ${step.selector} → ${step.action}`; }
+  else { desc=step.label||step.selector||''; sel=step.selector||''; }
+
+  return `<div class="step-row"
+      draggable="true"
+      data-idx="${idx}"
+      ondragstart="onStepDragStart(event,${idx})"
+      ondragover="event.preventDefault()"
+      ondrop="onStepDrop(event,${idx})"
+      ondragend="onStepDragEnd()">
+    <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
+    <span class="step-num">${idx+1}</span>
+    <span class="step-badge ${badgeCls}">${typeLabel}</span>
+    <div class="step-content">
+      <div class="step-desc">${desc||sel}</div>
+      ${sel&&sel!==desc?`<div class="step-sel">${sel}</div>`:''}
+      ${val?`<div class="step-val">${val}</div>`:''}
+    </div>
+    <div class="step-row-acts">
+      <button class="step-act-btn" onclick="editStep(${idx})" title="Edit">✏</button>
+      <button class="step-act-btn del" onclick="deleteStep(${idx})" title="Delete">🗑</button>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP DRAG & DROP (reorder within list)
+// ─────────────────────────────────────────────────────────────────────────────
+function onStepDragStart(e, idx) {
+  dragSrcType = 'step'; dragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(()=>document.querySelectorAll('.step-row')[idx]?.classList.add('dragging'),0);
+}
+function onStepDrop(e, targetIdx) {
+  e.preventDefault();
+  if (dragSrcType === 'step' && dragSrcIdx !== targetIdx) {
+    const moved = currentSteps.splice(dragSrcIdx, 1)[0];
+    currentSteps.splice(targetIdx, 0, moved);
+    markModified(); renderSteps();
+  } else if (dragSrcType === 'toolbox') {
+    insertToolboxStep(dragToolDef, targetIdx);
+  }
+}
+function onStepDragEnd() {
+  document.querySelectorAll('.step-row').forEach(r=>r.classList.remove('dragging','drag-over'));
+  dragSrcType=''; dragSrcIdx=-1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOOLBOX DRAG INTO STEPS
+// ─────────────────────────────────────────────────────────────────────────────
+function onToolDragStart(e, el) {
+  dragSrcType  = 'toolbox';
+  dragToolDef  = JSON.parse(el.getAttribute('data-tool').replace(/&#39;/g,"'"));
+  e.dataTransfer.effectAllowed = 'copy';
+}
+function onListDragOver(e) {
+  e.preventDefault();
+  if (dragSrcType==='toolbox') e.dataTransfer.dropEffect = 'copy';
+  document.getElementById('stepsList').classList.add('drag-active');
+}
+function onListDragLeave(e) {
+  if (!document.getElementById('stepsList').contains(e.relatedTarget))
+    document.getElementById('stepsList').classList.remove('drag-active');
+}
+function onListDrop(e) {
+  e.preventDefault();
+  document.getElementById('stepsList').classList.remove('drag-active');
+  if (dragSrcType==='toolbox') insertToolboxStep(dragToolDef, currentSteps.length);
+}
+
+function insertToolboxStep(toolDef, insertAt) {
+  // Build default step from tool definition
+  const step = { type: toolDef.type };
+  toolDef.fields.forEach(f => { step[f.k] = f.def || ''; });
+  currentSteps.splice(insertAt, 0, step);
+  markModified();
+  renderSteps();
+  // Open editor right away
+  editStep(insertAt);
+}
+
+function addToolboxStepAtEnd(el) {
+  const def = JSON.parse(el.getAttribute('data-tool').replace(/&#39;/g,"'"));
+  insertToolboxStep(def, currentSteps.length);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP EDITOR MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function editStep(idx) {
+  editingStepIdx = idx;
+  const step = currentSteps[idx];
+  const type = step.type;
+
+  // Find toolbox def for this type (or build generic fields)
+  let fields = [];
+  for (const cat of TOOLBOX_CATS) {
+    const found = cat.items.find(i=>i.type===type);
+    if (found) { fields = found.fields; break; }
+  }
+
+  // Recorded step types (not in toolbox)
+  if (!fields.length) {
+    if (type==='goto')         fields=[{k:'url',lbl:'URL',type:'text',def:''}];
+    else if (type==='click')   fields=[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'label',lbl:'Label (info only)',type:'text',def:''}];
+    else if (type==='fill')    fields=[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'value',lbl:'Value to Type',type:'text',def:''},{k:'label',lbl:'Field Label (info only)',type:'text',def:''}];
+    else if (type==='selectOption') fields=[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'value',lbl:'Option Value',type:'text',def:''},{k:'label',lbl:'Option Label (info only)',type:'text',def:''}];
+    else if (type==='check'||type==='uncheck') fields=[{k:'selector',lbl:'Element Selector',type:'text',def:''}];
+  }
+
+  const typeLabel = type.replace(/([A-Z])/g,' $1').trim();
+  document.getElementById('stepEditorTitle').textContent = `✏ Edit Step: ${typeLabel}`;
+  document.getElementById('stepEditorBody').innerHTML = fields.map(f => `
+    <div class="field">
+      <label>${f.lbl}</label>
+      ${f.type==='select'
+        ? `<select id="ef_${f.k}">${(f.opts||[]).map(o=>`<option ${step[f.k]===o?'selected':''}>${o}</option>`).join('')}</select>`
+        : `<input id="ef_${f.k}" type="${f.type||'text'}" value="${(step[f.k]||'').replace(/"/g,'&quot;')}" placeholder="${f.def||''}"/>`}
+    </div>`).join('') || `<div style="color:var(--text3);font-size:12px">No configurable fields for this step type.</div>`;
+
+  openModal('stepEditorModal');
+}
+
+function saveStepEdit() {
+  if (editingStepIdx < 0) return;
+  const step = currentSteps[editingStepIdx];
+  const type = step.type;
+
+  // Collect fields
+  document.getElementById('stepEditorBody').querySelectorAll('[id^="ef_"]').forEach(el => {
+    const key = el.id.replace('ef_', '');
+    step[key] = el.value;
+  });
+
+  closeModal('stepEditorModal');
+  markModified();
+  renderSteps();
+}
+
+function deleteStep(idx) {
+  if (!confirm('Delete this step?')) return;
+  currentSteps.splice(idx, 1);
+  markModified(); renderSteps();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SAVE STEPS TO SERVER
+// ─────────────────────────────────────────────────────────────────────────────
+async function saveSteps() {
+  if (!activeTCId) return;
+  const r = await api('PUT', `/api/testcases/${encodeURIComponent(activeTCId)}/steps`, { steps: currentSteps });
+  if (r.error) { toast(r.error,'error'); return; }
+  toast(`✓ Steps saved (${r.stepCount} total)`, 'success');
+  markSaved();
+  await loadSuites();
+  // Update step count chip
+  document.getElementById('detailMeta').querySelectorAll('.mchip')[0].textContent = `🪜 ${r.stepCount} steps`;
+}
+
+function markModified() {
+  stepsModified = true;
+  document.getElementById('btnSaveSteps').classList.add('visible');
+}
+function markSaved() {
+  stepsModified = false;
+  document.getElementById('btnSaveSteps').classList.remove('visible');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELECTION & RUN
+// ─────────────────────────────────────────────────────────────────────────────
+function toggleSel(id) { selectedTCIds.has(id)?selectedTCIds.delete(id):selectedTCIds.add(id); updateSelUI(); }
+function updateSelUI() {
+  const n = selectedTCIds.size;
+  document.getElementById('selInfo').style.display = n?'block':'none';
+  document.getElementById('selCt').textContent     = n;
+  const btn = document.getElementById('btnRunSel');
+  btn.disabled    = n===0;
+  btn.textContent = n?`▶ Run Selected (${n})`:'▶ Run Selected';
+}
+
+async function runTC(id) {
+  const r = await api('POST',`/api/run/testcase/${encodeURIComponent(id)}`);
+  if (r.error) { toast(r.error,'error'); return; }
+  toast(`▶ Running "${id}" — watch the browser!`, 'success');
+}
+async function runCurrentTC() { if (activeTCId) runTC(activeTCId); }
+async function runSuite(id) {
+  const r = await api('POST',`/api/run/suite/${encodeURIComponent(id)}`);
+  if (r.error) { toast(r.error,'error'); return; }
+  toast(`▶ Running all in "${id}"`, 'success');
+}
+async function runSelected() {
+  const r = await api('POST','/api/run/selected',{ids:[...selectedTCIds]});
+  if (r.error) { toast(r.error,'error'); return; }
+  toast(`▶ Running ${selectedTCIds.size} test case(s)…`, 'success');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECORDING
+// ─────────────────────────────────────────────────────────────────────────────
+function openRecordModal() {
+  document.getElementById('recSuiteId').innerHTML = suites.map(s=>`<option value="${es(s.id)}">${s.name}</option>`).join('');
+  document.getElementById('recTCName').value='';
+  openModal('recordModal');
+  setTimeout(()=>document.getElementById('recTCName').focus(),100);
+}
+
+async function startRecording() {
+  const name    = document.getElementById('recTCName').value.trim();
+  const suiteId = document.getElementById('recSuiteId').value;
+  const url     = document.getElementById('recUrl').value.trim();
+  if (!name) { toast('Test case name required.','error'); return; }
+  closeModal('recordModal');
+  recTCName=name; recSuiteId=suiteId;
+
+  const r = await api('POST','/api/record/start',{testCaseName:name,suiteId,url});
+  if (r.error) { toast(r.error,'error'); return; }
+
+  document.getElementById('recName').textContent='';
+  document.getElementById('recName').textContent=name;
+  document.getElementById('recBar').classList.add('visible');
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('tcDetail').style.display='none';
+  document.getElementById('livePanel').style.display='flex';
+  document.getElementById('liveSteps').innerHTML='<div style="text-align:center;color:var(--text3);padding:40px;font-size:13px;line-height:1.8">🖱️ Interact with the browser window that opened.</div>';
+  setStatus('recording'); startPolling();
+}
+
+async function pauseRec() {
+  const r=await api('POST','/api/record/pause'); if(r.error){toast(r.error,'error');return;}
+  setStatus('paused');
+  document.getElementById('btnPause').style.display='none';
+  document.getElementById('btnResume').style.display='inline-flex';
+}
+async function resumeRec() {
+  const r=await api('POST','/api/record/resume'); if(r.error){toast(r.error,'error');return;}
+  setStatus('recording');
+  document.getElementById('btnPause').style.display='inline-flex';
+  document.getElementById('btnResume').style.display='none';
+}
+async function stopRec() {
+  stopPolling();
+  const r=await api('POST','/api/record/stop',{testCaseName:recTCName,suiteId:recSuiteId});
+  if(r.error){toast(r.error,'error');setStatus('idle');return;}
+  document.getElementById('recBar').classList.remove('visible');
+  document.getElementById('livePanel').style.display='none';
+  document.getElementById('emptyState').style.display='flex';
+  document.getElementById('btnPause').style.display='inline-flex';
+  document.getElementById('btnResume').style.display='none';
+  setStatus('idle');
+  toast(`✓ Saved "${recTCName}" — ${r.stepCount} steps`, 'success');
+  await loadSuites();
+  expandedSuites.add(recSuiteId);
+  openTC(recTCName);
+}
+
+function startPolling() {
+  pollTimer=setInterval(async()=>{
+    const d=await api('GET','/api/status');
+    document.getElementById('liveCt').textContent=d.stepCount;
+    document.getElementById('recStepCt').textContent=`${d.stepCount} step${d.stepCount!==1?'s':''}`;
+    if(d.steps?.length) {
+      const c=document.getElementById('liveSteps');
+      c.innerHTML=d.steps.map((s,i)=>`<div class="step-row live-step">${stepRowHTML(s,i).replace(/^<div[^>]*>/,'')}`).join('');
+      c.scrollTop=c.scrollHeight;
+    }
+  },900);
+}
+function stopPolling(){clearInterval(pollTimer);pollTimer=null;}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUITE MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+function openSuiteModal() {
+  document.getElementById('suiteName').value=''; document.getElementById('suiteDesc').value='';
+  openModal('suiteModal'); setTimeout(()=>document.getElementById('suiteName').focus(),100);
+}
+async function createSuite() {
+  const name=document.getElementById('suiteName').value.trim();
+  const desc=document.getElementById('suiteDesc').value.trim();
+  if (!name){toast('Name required.','error');return;}
+  const r=await api('POST','/api/suites',{name,description:desc});
+  if(r.error){toast(r.error,'error');return;}
+  closeModal('suiteModal'); toast(`Suite "${name}" created`,'success');
+  expandedSuites.add(name); await loadSuites();
+}
+async function deleteSuite(id) {
+  const s=suites.find(x=>x.id===id); const n=s?.testCases?.length||0;
+  if(!confirm(`Delete suite "${id}"${n?` and its ${n} test case(s)`:''}?`)) return;
+  const r=await api('DELETE',`/api/suites/${encodeURIComponent(id)}`);
+  if(r.error){toast(r.error,'error');return;}
+  toast(`Deleted suite "${id}"`,'info');
+  if(activeTCId&&s?.testCases.some(t=>t.id===activeTCId)){
+    activeTCId=null; stepsModified=false;
+    document.getElementById('tcDetail').style.display='none';
+    document.getElementById('emptyState').style.display='flex';
+  }
+  await loadSuites();
+}
+function showSuiteMenu(e,id) {
+  e.stopPropagation();
+  const m=document.getElementById('ctxMenu');
+  m.innerHTML=`<div class="ctx-i" onclick="runSuite('${es(id)}');hideCtx()">▶ Run All Test Cases</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-i danger" onclick="deleteSuite('${es(id)}');hideCtx()">🗑 Delete Suite</div>`;
+  m.style.cssText=`display:block;left:${e.clientX}px;top:${e.clientY}px`;
+}
+function hideCtx(){document.getElementById('ctxMenu').style.display='none';}
+document.addEventListener('click',hideCtx);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEST CASE MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+async function deleteCurrentTC() {
+  if(!activeTCId||!confirm(`Delete "${activeTCId}"?`)) return;
+  const r=await api('DELETE',`/api/testcases/${encodeURIComponent(activeTCId)}`);
+  if(r.error){toast(r.error,'error');return;}
+  toast(`Deleted "${activeTCId}"`,'info'); activeTCId=null; stepsModified=false;
+  document.getElementById('tcDetail').style.display='none';
+  document.getElementById('emptyState').style.display='flex';
+  await loadSuites();
+}
+function openMoveModal() {
+  document.getElementById('moveSuiteId').innerHTML=suites.map(s=>`<option value="${es(s.id)}">${s.name}</option>`).join('');
+  openModal('moveModal');
+}
+async function moveTC() {
+  const sid=document.getElementById('moveSuiteId').value;
+  const r=await api('POST',`/api/testcases/${encodeURIComponent(activeTCId)}/move`,{suiteId:sid});
+  if(r.error){toast(r.error,'error');return;}
+  closeModal('moveModal'); toast(`Moved to "${sid}"`,'success');
+  await loadSuites(); openTC(activeTCId);
+}
+function openRenameModal() {
+  document.getElementById('renameInput').value=activeTCId||'';
+  openModal('renameModal'); setTimeout(()=>document.getElementById('renameInput').select(),100);
+}
+async function renameTC() {
+  const name=document.getElementById('renameInput').value.trim();
+  if(!name){toast('Name required.','error');return;}
+  const r=await api('PUT',`/api/testcases/${encodeURIComponent(activeTCId)}`,{name});
+  if(r.error){toast(r.error,'error');return;}
+  activeTCId=name; closeModal('renameModal'); toast(`Renamed to "${name}"`,'success');
+  await loadSuites(); openTC(name);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); editingStepIdx=-1; }
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
+function setStatus(s) {
+  document.getElementById('statusPill').className=`status-pill ${s}`;
+  document.getElementById('statusText').textContent=s.charAt(0).toUpperCase()+s.slice(1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+renderToolbox();
+loadSuites();
+</script>
+</body>
+</html>

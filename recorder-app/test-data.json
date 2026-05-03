@@ -1,0 +1,150 @@
+{
+  "suites": {
+    "Uncategorized": {
+      "id": "Uncategorized",
+      "name": "Uncategorized",
+      "description": "Migrated test cases",
+      "createdAt": "2026-05-03T01:33:44.770Z"
+    }
+  },
+  "testCases": {
+    "Staging": {
+      "name": "Staging",
+      "createdAt": "2026-05-01T03:41:00.270Z",
+      "stepCount": 21,
+      "steps": [
+        {
+          "type": "goto",
+          "url": "https://portal.redonion.ai/staging",
+          "label": "https://portal.redonion.ai/staging",
+          "timestamp": 1777606799033
+        },
+        {
+          "type": "fill",
+          "selector": "#EmailAddress",
+          "value": "thiyagarajank@redonion.ai",
+          "label": "someone@yourcompany.com",
+          "timestamp": 1777606809119
+        },
+        {
+          "type": "fill",
+          "selector": "#Password",
+          "value": "BhuvThiy12#",
+          "label": "Password",
+          "timestamp": 1777606813215
+        },
+        {
+          "type": "click",
+          "selector": "#RememberMe",
+          "label": "true",
+          "timestamp": 1777606813532
+        },
+        {
+          "type": "check",
+          "selector": "#RememberMe",
+          "label": "RememberMe",
+          "timestamp": 1777606813534
+        },
+        {
+          "type": "fill",
+          "selector": "#RememberMe",
+          "value": "true",
+          "label": "RememberMe",
+          "timestamp": 1777606814334
+        },
+        {
+          "type": "click",
+          "selector": "#signInButton",
+          "label": "Sign In",
+          "timestamp": 1777606814391
+        },
+        {
+          "type": "click",
+          "selector": "#signInOverrideButton",
+          "label": "Continue",
+          "timestamp": 1777606816324
+        },
+        {
+          "type": "click",
+          "selector": "#signInButton",
+          "label": "Sign In",
+          "timestamp": 1777606816325
+        },
+        {
+          "type": "goto",
+          "url": "https://portal.redonion.ai/Staging/Compass",
+          "label": "https://portal.redonion.ai/Staging/Compass",
+          "timestamp": 1777606817101
+        },
+        {
+          "type": "click",
+          "selector": "a:has-text(\"Ida Claire\")",
+          "label": "Ida Claire",
+          "timestamp": 1777606818958
+        },
+        {
+          "type": "click",
+          "selector": "a:has-text(\"Mexican Sugar\")",
+          "label": "Mexican Sugar",
+          "timestamp": 1777606822349
+        },
+        {
+          "type": "click",
+          "selector": "a:has-text(\"Sixty Vines\")",
+          "label": "Sixty Vines",
+          "timestamp": 1777606825124
+        },
+        {
+          "type": "click",
+          "selector": "a:has-text(\"Analytics\")",
+          "label": "Analytics",
+          "timestamp": 1777606827988
+        },
+        {
+          "type": "goto",
+          "url": "https://portal.redonion.ai/Staging/AnalyticsTab",
+          "label": "https://portal.redonion.ai/Staging/AnalyticsTab",
+          "timestamp": 1777606828372
+        },
+        {
+          "type": "click",
+          "selector": "a:has-text(\"BullsEye_FB\")",
+          "label": "BullsEye_FB",
+          "timestamp": 1777606830357
+        },
+        {
+          "type": "goto",
+          "url": "https://portal.redonion.ai/Staging/AnalyticsTab?page=248599",
+          "label": "https://portal.redonion.ai/Staging/AnalyticsTab?page=248599",
+          "timestamp": 1777606830626
+        },
+        {
+          "type": "click",
+          "selector": "#aiInsightBtn",
+          "label": "",
+          "timestamp": 1777606840257
+        },
+        {
+          "type": "click",
+          "selector": "html.k-webkit.k-webkit147",
+          "label": "Analytics - RedOnion.ai\n    \n    \n    \n    \n    \n    \n\n     ",
+          "timestamp": 1777606851323
+        },
+        {
+          "type": "click",
+          "selector": "a:has-text(\"Compass\")",
+          "label": "Compass",
+          "timestamp": 1777606853953
+        },
+        {
+          "type": "goto",
+          "url": "https://portal.redonion.ai/Staging/Compass",
+          "label": "https://portal.redonion.ai/Staging/Compass",
+          "timestamp": 1777606855534
+        }
+      ],
+      "id": "Staging",
+      "suiteId": "Uncategorized"
+    }
+  }
+}

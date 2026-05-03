@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Automated Tests — RO Test Automation</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;
+  --border:#30363d;--border2:#3d444d;
+  --text:#e6edf3;--text2:#8d96a0;--text3:#656d76;
+  --accent:#388bfd;--accent2:#1f6feb;
+  --green:#3fb950;--green-bg:#0d2318;
+  --red:#f85149;--red-bg:#2d1118;
+  --orange:#d29922;--orange-bg:#2d1f0e;
+  --purple:#bc8cff;--purple-bg:#1d1133;
+  --sidebar-w:280px;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:13px;
+}
+button{cursor:pointer;font-family:inherit;font-size:13px}
+input,select{font-family:inherit;font-size:13px}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── APP BAR ── */
+.app-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:0 14px;height:46px;min-height:46px;
+  background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.home-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:5px;
+  background:var(--bg4);border:1px solid var(--border);
+  color:var(--text2);font-size:12px;font-weight:600;
+  text-decoration:none;transition:border-color .15s,color .15s;
+}
+.home-btn:hover{border-color:var(--accent);color:var(--accent)}
+.app-bar h1{font-size:14px;font-weight:700}
+.ver{font-size:10px;color:var(--text3);background:var(--bg4);padding:1px 5px;border-radius:8px;margin-left:3px}
+.spacer{flex:1}
+.status-badge{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+  border:1px solid var(--border);background:var(--bg4);color:var(--text3);
+}
+.status-badge.running{background:var(--orange-bg);color:var(--orange);border-color:var(--orange)}
+.status-badge.passed{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.status-badge.failed{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-badge.running .sdot{animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── LAYOUT ── */
+.main-layout{display:flex;flex:1;overflow:hidden}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-section{
+  padding:12px 10px 8px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sidebar-section h3{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+
+/* URL Config */
+.url-row{display:flex;flex-direction:column;gap:5px}
+.url-row label{font-size:11px;color:var(--text2)}
+.url-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:5px;padding:5px 8px;color:var(--text);
+  font-size:11px;outline:none;transition:border-color .15s;
+}
+.url-input:focus{border-color:var(--accent)}
+.headed-row{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--text2);cursor:pointer}
+.headed-row input[type=checkbox]{accent-color:var(--accent);cursor:pointer}
+
+/* Spec list */
+.spec-list-area{flex:1;overflow-y:auto;padding:8px}
+.spec-category{margin-bottom:10px}
+.spec-cat-label{
+  font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.5px;padding:3px 6px;margin-bottom:4px;display:block;
+}
+.spec-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 8px;border-radius:5px;border:1px solid transparent;
+  cursor:pointer;transition:background .15s,border-color .15s;
+  margin-bottom:2px;
+}
+.spec-item:hover{background:var(--bg4)}
+.spec-item.selected{background:var(--bg3);border-color:var(--border)}
+.spec-item input[type=checkbox]{accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.spec-name{font-size:12px;color:var(--text);flex:1}
+.spec-path{font-size:10px;color:var(--text3)}
+
+/* Run Controls */
+.run-controls{padding:10px;border-top:1px solid var(--border);flex-shrink:0}
+.run-btn-row{display:flex;gap:6px;margin-bottom:6px}
+.run-btn{
+  flex:1;padding:8px 10px;border-radius:6px;border:none;
+  font-weight:700;font-size:12px;transition:opacity .15s;
+}
+.run-btn.primary{background:var(--green);color:#0d1117}
+.run-btn.secondary{background:var(--bg4);color:var(--text);border:1px solid var(--border)}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+.select-all-row{display:flex;gap:6px}
+.sel-btn{
+  flex:1;font-size:11px;padding:4px 8px;border-radius:4px;
+  background:transparent;border:1px solid var(--border);color:var(--text2);
+}
+.sel-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── MAIN PANEL ── */
+.main-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Summary bar */
+.summary-bar{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);
+  flex-shrink:0;min-height:44px;
+}
+.sum-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-right:4px}
+.sum-pill{
+  display:flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;
+}
+.sum-pill.pass{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.sum-pill.fail{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+.sum-pill.skip{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+.sum-pill.total{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+.sum-spacer{flex:1}
+.report-link{
+  font-size:11px;color:var(--accent);text-decoration:none;
+  padding:3px 10px;border-radius:5px;border:1px solid var(--accent);
+  transition:background .15s;
+}
+.report-link:hover{background:rgba(56,139,253,.1)}
+
+/* Terminal */
+.terminal{
+  flex:1;overflow-y:auto;padding:14px 16px;
+  font-family:'SF Mono','Fira Code','Consolas',monospace;
+  font-size:12px;line-height:1.7;background:var(--bg);
+}
+.terminal .t-line{white-space:pre-wrap;word-break:break-all}
+.terminal .t-pass{color:var(--green)}
+.terminal .t-fail{color:var(--red)}
+.terminal .t-warn{color:var(--orange)}
+.terminal .t-info{color:var(--accent)}
+.terminal .t-dim{color:var(--text3)}
+.terminal .t-title{color:var(--purple);font-weight:700}
+.terminal .t-done-pass{color:var(--green);font-weight:700;font-size:13px}
+.terminal .t-done-fail{color:var(--red);font-weight:700;font-size:13px}
+
+.empty-terminal{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:12px;color:var(--text3);
+}
+.empty-terminal .big-icon{font-size:40px;opacity:.4}
+.empty-terminal p{font-size:13px}
+.empty-terminal small{font-size:11px}
+
+.cursor-blink{
+  display:inline-block;width:8px;height:13px;background:var(--text2);
+  animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:2px;
+}
+</style>
+</head>
+<body>
+
+<!-- App Bar -->
+<div class="app-bar">
+  <a class="home-btn" href="/">← Home</a>
+  <h1>🧪 Automated Tests <span class="ver">v1.0</span></h1>
+  <div class="spacer"></div>
+  <div class="status-badge" id="statusBadge">
+    <div class="sdot"></div>
+    <span id="statusText">Ready</span>
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div class="main-layout">
+
+  <!-- Left Sidebar -->
+  <div class="sidebar">
+
+    <!-- Target URL -->
+    <div class="sidebar-section">
+      <h3>Target URL</h3>
+      <div class="url-row">
+        <label>Run tests against this website:</label>
+        <input class="url-input" id="baseUrl" type="url" value="https://automationexercise.com/" placeholder="https://yoursite.com"/>
+      </div>
+      <label class="headed-row">
+        <input type="checkbox" id="headedMode"/>
+        Show browser window while running
+      </label>
+    </div>
+
+    <!-- Spec Files -->
+    <div class="sidebar-section" style="border-bottom:none;padding-bottom:0">
+      <h3>Test Files</h3>
+    </div>
+    <div class="spec-list-area" id="specList">
+      <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Loading test files…</div>
+    </div>
+
+    <!-- Run Controls -->
+    <div class="run-controls">
+      <div class="select-all-row" style="margin-bottom:6px">
+        <button class="sel-btn" onclick="selectAll(true)">Select All</button>
+        <button class="sel-btn" onclick="selectAll(false)">Deselect All</button>
+      </div>
+      <div class="run-btn-row">
+        <button class="run-btn primary" id="runBtn" onclick="runTests()">▶ Run Selected</button>
+        <button class="run-btn secondary" id="stopBtn" onclick="stopRun()" disabled>■ Stop</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Main Panel -->
+  <div class="main-panel">
+
+    <!-- Summary Bar -->
+    <div class="summary-bar" id="summaryBar">
+      <span class="sum-label">Results</span>
+      <div class="sum-pill pass" id="sumPass">✓ 0 passed</div>
+      <div class="sum-pill fail" id="sumFail">✗ 0 failed</div>
+      <div class="sum-pill total" id="sumTotal">0 total</div>
+      <div class="sum-spacer"></div>
+      <a class="report-link" href="/playwright-report" target="_blank" id="reportLink" style="display:none">📄 View HTML Report</a>
+    </div>
+
+    <!-- Terminal Output -->
+    <div class="terminal" id="terminal">
+      <div class="empty-terminal" id="emptyState">
+        <div class="big-icon">🧪</div>
+        <p>Select test files and click <strong>Run Selected</strong></p>
+        <small>Output will appear here in real-time</small>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let specs = [];
+let selectedSpecs = new Set();
+let running = false;
+let currentSource = null;
+let passed = 0, failed = 0, total = 0;
+
+// ── Load Specs ──────────────────────────────────────────────────────────────
+async function loadSpecs() {
+  try {
+    const res = await fetch('/api/playwright/specs');
+    const data = await res.json();
+    specs = data.specs || [];
+    renderSpecs();
+    // Select all by default
+    specs.forEach(s => selectedSpecs.add(s));
+    updateCheckboxes();
+  } catch(e) {
+    document.getElementById('specList').innerHTML =
+      `<div style="padding:16px;color:var(--red);font-size:12px">⚠ Could not load test files.<br><small>${e.message}</small></div>`;
+  }
+}
+
+function renderSpecs() {
+  const container = document.getElementById('specList');
+  if (!specs.length) {
+    container.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:12px">No spec files found.</div>';
+    return;
+  }
+
+  // Group by folder
+  const groups = {};
+  specs.forEach(s => {
+    const parts = s.split('/');
+    const cat = parts.length > 1 ? parts[0] : 'root';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(s);
+  });
+
+  let html = '';
+  for (const [cat, items] of Object.entries(groups)) {
+    const label = cat === 'root' ? 'General' : (cat === 'ui' ? '🖥 UI Tests' : cat === 'api' ? '🔌 API Tests' : cat);
+    html += `<div class="spec-category">
+      <span class="spec-cat-label">${label}</span>`;
+    items.forEach(s => {
+      const name = s.split('/').pop().replace('.spec.ts','');
+      html += `<div class="spec-item selected" id="item_${cssId(s)}" onclick="toggleSpec('${s}')">
+        <input type="checkbox" id="chk_${cssId(s)}" checked onclick="event.stopPropagation();toggleSpec('${s}')"/>
+        <div>
+          <div class="spec-name">${name}</div>
+          <div class="spec-path">${s}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function cssId(s) { return s.replace(/[^a-zA-Z0-9]/g,'_'); }
+
+function toggleSpec(s) {
+  if (selectedSpecs.has(s)) selectedSpecs.delete(s);
+  else selectedSpecs.add(s);
+  const chk = document.getElementById('chk_' + cssId(s));
+  const item = document.getElementById('item_' + cssId(s));
+  if (chk) chk.checked = selectedSpecs.has(s);
+  if (item) { item.classList.toggle('selected', selectedSpecs.has(s)); }
+}
+
+function updateCheckboxes() {
+  specs.forEach(s => {
+    const chk = document.getElementById('chk_' + cssId(s));
+    const item = document.getElementById('item_' + cssId(s));
+    if (chk) chk.checked = selectedSpecs.has(s);
+    if (item) item.classList.toggle('selected', selectedSpecs.has(s));
+  });
+}
+
+function selectAll(v) {
+  specs.forEach(s => { if(v) selectedSpecs.add(s); else selectedSpecs.delete(s); });
+  updateCheckboxes();
+}
+
+// ── Run Tests ───────────────────────────────────────────────────────────────
+function runTests() {
+  if (running) return;
+  if (!selectedSpecs.size) { alert('Please select at least one test file.'); return; }
+
+  running = true;
+  passed = 0; failed = 0; total = 0;
+
+  // Reset UI
+  document.getElementById('emptyState')?.remove();
+  const terminal = document.getElementById('terminal');
+  terminal.innerHTML = '';
+  updateSummary();
+  setStatus('running', 'Running…');
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('reportLink').style.display = 'none';
+
+  const baseUrl = document.getElementById('baseUrl').value.trim();
+  const headed  = document.getElementById('headedMode').checked;
+  const specsParam = [...selectedSpecs].join(',');
+
+  const params = new URLSearchParams({
+    specs: specsParam,
+    headed: headed ? 'true' : 'false',
+    baseUrl: baseUrl
+  });
+
+  appendLine(`▶ Starting tests…`, 't-info');
+  appendLine(`  Target: ${baseUrl}`, 't-dim');
+  appendLine(`  Files: ${[...selectedSpecs].join(', ')}`, 't-dim');
+  appendLine(`  Mode: ${headed ? 'Headed (browser visible)' : 'Headless'}`, 't-dim');
+  appendLine(`${'─'.repeat(60)}`, 't-dim');
+  appendLine('', '');
+
+  currentSource = new EventSource(`/api/playwright/run?${params}`);
+
+  currentSource.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'stdout' || msg.type === 'stderr') {
+      processOutput(msg.text);
+    } else if (msg.type === 'done') {
+      finishRun(msg.code, msg.passed, msg.failed, msg.total);
+    }
+  };
+
+  currentSource.onerror = () => {
+    if (running) finishRun(-1, passed, failed, total);
+  };
+}
+
+function stopRun() {
+  if (currentSource) { currentSource.close(); currentSource = null; }
+  running = false;
+  appendLine('', '');
+  appendLine('■ Run stopped by user.', 't-warn');
+  setStatus('idle', 'Stopped');
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+}
+
+function finishRun(code, p, f, t) {
+  if (currentSource) { currentSource.close(); currentSource = null; }
+  running = false;
+
+  appendLine('', '');
+  appendLine('═'.repeat(60), 't-dim');
+  if (code === 0) {
+    appendLine(`✅  All tests passed! (${p} passed, ${f} failed, ${t} total)`, 't-done-pass');
+    setStatus('passed', `${p} passed`);
+  } else {
+    appendLine(`❌  Run complete with failures. (${p} passed, ${f} failed, ${t} total)`, 't-done-fail');
+    setStatus('failed', `${f} failed`);
+  }
+  appendLine('═'.repeat(60), 't-dim');
+
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('reportLink').style.display = '';
+
+  // Update counters from actual output
+  updateSummary(p, f, t);
+}
+
+// ── Output Processing ────────────────────────────────────────────────────────
+function processOutput(raw) {
+  const lines = raw.split('\n');
+  lines.forEach(line => {
+    if (!line && !raw.endsWith('\n')) return;
+    let cls = '';
+    const l = line.trim();
+
+    if (/✓|passed|PASS/.test(l)) { cls = 't-pass'; passed++; total++; }
+    else if (/✗|×|failed|FAIL/.test(l)) { cls = 't-fail'; failed++; total++; }
+    else if (/warning|warn/i.test(l)) cls = 't-warn';
+    else if (/Error:|error:/i.test(l)) cls = 't-fail';
+    else if (/^\s*\d+ (passed|failed|skipped)/.test(l)) cls = 't-info';
+    else if (l.startsWith('Running') || l.startsWith('  ')) cls = 't-dim';
+    else cls = '';
+
+    appendLine(line, cls);
+    updateSummary();
+  });
+}
+
+function appendLine(text, cls) {
+  const terminal = document.getElementById('terminal');
+  const div = document.createElement('div');
+  div.className = 't-line' + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+// ── Status & Summary ─────────────────────────────────────────────────────────
+function setStatus(state, text) {
+  const badge = document.getElementById('statusBadge');
+  badge.className = 'status-badge ' + state;
+  document.getElementById('statusText').textContent = text;
+}
+
+function updateSummary(p, f, t) {
+  const ps = p !== undefined ? p : passed;
+  const fs = f !== undefined ? f : failed;
+  const ts = t !== undefined ? t : total;
+  document.getElementById('sumPass').textContent  = `✓ ${ps} passed`;
+  document.getElementById('sumFail').textContent  = `✗ ${fs} failed`;
+  document.getElementById('sumTotal').textContent = `${ts} total`;
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+loadSpecs();
+</script>
+</body>
+</html>

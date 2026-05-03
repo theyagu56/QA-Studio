@@ -1,0 +1,13 @@
+{
+  "name": "test-recorder-app",
+  "version": "1.0.0",
+  "description": "Record and replay browser test steps with a UI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "playwright": "^1.42.0"
+  }
+}

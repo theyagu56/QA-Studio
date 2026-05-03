@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@utils/*": ["utils/*"],
+      "@pages/*": ["pages/*"]
+    }
+  },
+  "include": ["tests/**/*.ts", "pages/**/*.ts", "utils/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
