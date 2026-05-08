@@ -11,7 +11,7 @@
     "Staging": {
       "name": "Staging",
       "createdAt": "2026-05-01T03:41:00.270Z",
-      "stepCount": 21,
+      "stepCount": 23,
       "steps": [
         {
           "type": "goto",
@@ -125,6 +125,10 @@
           "timestamp": 1777606840257
         },
         {
+          "type": "wait",
+          "seconds": "3"
+        },
+        {
           "type": "click",
           "selector": "html.k-webkit.k-webkit147",
           "label": "Analytics - RedOnion.ai\n    \n    \n    \n    \n    \n    \n\n     ",
@@ -141,6 +145,10 @@
           "url": "https://portal.redonion.ai/Staging/Compass",
           "label": "https://portal.redonion.ai/Staging/Compass",
           "timestamp": 1777606855534
+        },
+        {
+          "type": "wait",
+          "seconds": "3"
         }
       ],
       "id": "Staging",

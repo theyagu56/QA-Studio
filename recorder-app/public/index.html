@@ -429,17 +429,29 @@ let editingStepIdx = -1;
 const TOOLBOX_CATS = [
   {
     cat: 'Timing', items: [
-      { type:'wait',           icon:'⏱', name:'Wait',              desc:'Pause for N seconds',           fields:[{k:'seconds',lbl:'Seconds',type:'number',def:'3'}] },
-      { type:'waitForElement', icon:'👁', name:'Wait for Element',  desc:'Wait until element appears',    fields:[{k:'selector',lbl:'CSS Selector / XPath',type:'text',def:''},{k:'timeout',lbl:'Timeout (seconds)',type:'number',def:'10'}] },
+      { type:'wait',           icon:'⏱', name:'Wait',               desc:'Pause for N seconds',                fields:[{k:'seconds',lbl:'Seconds',type:'number',def:'3'}] },
+      { type:'waitForElement', icon:'👁', name:'Wait for Element',   desc:'Wait until element appears',         fields:[{k:'selector',lbl:'CSS Selector / XPath',type:'text',def:''},{k:'timeout',lbl:'Timeout (seconds)',type:'number',def:'10'}] },
+      { type:'waitForEnabled', icon:'🔓', name:'Wait for Enabled',   desc:'Wait until button/element is active', fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'timeout',lbl:'Timeout (seconds)',type:'number',def:'30'}] },
     ]
   },
   {
     cat: 'Assertions', items: [
-      { type:'assertText',       icon:'✅', name:'Assert Text',         desc:'Verify element contains text',  fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'text',lbl:'Expected Text',type:'text',def:''}] },
-      { type:'assertVisible',    icon:'👀', name:'Assert Visible',      desc:'Verify element is visible',     fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
-      { type:'assertNotVisible', icon:'🙈', name:'Assert Not Visible',  desc:'Verify element is hidden',      fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
-      { type:'assertURL',        icon:'🔗', name:'Assert URL Contains', desc:'Verify page URL contains text', fields:[{k:'url',lbl:'Expected URL fragment',type:'text',def:''}] },
-      { type:'assertTitle',      icon:'📄', name:'Assert Title',        desc:'Verify page title contains',    fields:[{k:'text',lbl:'Expected Title Text',type:'text',def:''}] },
+      { type:'assertText',       icon:'✅', name:'Assert Text Contains', desc:'Verify element contains text',     fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'text',lbl:'Expected Text',type:'text',def:''}] },
+      { type:'assertTextEquals', icon:'🎯', name:'Assert Exact Text',    desc:'Verify element text matches exactly', fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'text',lbl:'Exact Expected Text',type:'text',def:''}] },
+      { type:'assertVisible',    icon:'👀', name:'Assert Visible',       desc:'Verify element is visible',        fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'assertNotVisible', icon:'🙈', name:'Assert Not Visible',   desc:'Verify element is hidden',         fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'assertEnabled',    icon:'🟢', name:'Assert Enabled',       desc:'Verify button/field is enabled',   fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'assertDisabled',   icon:'🔴', name:'Assert Disabled',      desc:'Verify button/field is disabled',  fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''}] },
+      { type:'assertCount',      icon:'🔢', name:'Assert Element Count',  desc:'Verify N elements match selector', fields:[{k:'selector',lbl:'Element Selector',type:'text',def:''},{k:'count',lbl:'Expected Count',type:'number',def:'1'}] },
+      { type:'assertURL',        icon:'🔗', name:'Assert URL Contains',  desc:'Verify page URL contains text',    fields:[{k:'url',lbl:'Expected URL fragment',type:'text',def:''}] },
+      { type:'assertTitle',      icon:'📄', name:'Assert Title',         desc:'Verify page title contains',       fields:[{k:'text',lbl:'Expected Title Text',type:'text',def:''}] },
+    ]
+  },
+  {
+    cat: 'Store & Compare', items: [
+      { type:'storeText',        icon:'📦', name:'Store Text',          desc:'Save element text for later comparison', fields:[{k:'selector',lbl:'Element Selector (source)',type:'text',def:''},{k:'variable',lbl:'Variable Name',type:'text',def:'myValue'}] },
+      { type:'assertStoredText', icon:'🔍', name:'Assert Stored Text',  desc:'Compare element to a stored variable',   fields:[{k:'selector',lbl:'Element Selector (target)',type:'text',def:''},{k:'variable',lbl:'Variable Name',type:'text',def:'myValue'},{k:'mode',lbl:'Match Mode',type:'select',def:'equals',opts:['equals','contains']}] },
+      { type:'compareElements',  icon:'⚖',  name:'Compare Two Elements',desc:'Compare text of two elements directly',  fields:[{k:'selectorA',lbl:'Selector A (e.g. popup value)',type:'text',def:''},{k:'selectorB',lbl:'Selector B (e.g. main page value)',type:'text',def:''},{k:'mode',lbl:'Match Mode',type:'select',def:'equals',opts:['equals','contains']}] },
     ]
   },
   {
